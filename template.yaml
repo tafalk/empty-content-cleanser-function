@@ -37,6 +37,12 @@ Resources:
               Resource: "*"
       Runtime: python3.8
       Timeout: 3
+      Events:
+        EmptyContentCleanserScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3 * * ? *)
+            Enabled: True
       Tags:
         Environment: !Ref Environment
         Application: !Ref Application

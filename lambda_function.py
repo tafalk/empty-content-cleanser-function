@@ -46,4 +46,7 @@ def lambda_handler(event, _context):
                     }
                 )
 
-    LOGGER.info('Items deleted: %s', deletion_result)
+    if not deletion_result:
+        LOGGER.info('no eligible items found.')
+        return
+    LOGGER.info('deleted item ids: %s', deletion_result)
