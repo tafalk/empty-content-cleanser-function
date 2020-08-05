@@ -3,7 +3,6 @@ import os
 import logging
 from datetime import datetime, timedelta
 import boto3
-from boto3.dynamodb.conditions import Key #, Attr
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
@@ -22,7 +21,7 @@ STREAM_TABLE_IS_SEALED_FIELD = 'isSealed'
 STREAM_TABLE_START_TIME_FIELD = 'startTime'
 TIME_TO_DELETE = 3 * 86400 # 3 days in seconds
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context):
     """"Default Handler"""
     LOGGER.debug(
         'Content cleansing triggered with event %s', event)
@@ -41,20 +40,10 @@ def lambda_handler(event, context):
                     and item.get(STREAM_TABLE_START_TIME_FIELD) < start_time_old_limit_iso
             ):
                 deletion_result.append(item['id'])
-                # batch.delete_item(
-                #     Key={
-                #         'id': item['id']
-                #     }
-                # )
+                batch.delete_item(
+                    Key={
+                        'id': item['id']
+                    }
+                )
 
-    # # Query
-    # query_res = stream_table.query(
-    #     IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
-    #     KeyConditionExpression=Key(STREAM_TABLE_IS_SEALED_FIELD).eq(0) & Key(
-    #         STREAM_TABLE_START_TIME_FIELD).lt(start_time_old_limit_iso),
-    #     Select='ALL_ATTRIBUTES',
-    #     ScanIndexForward=True
-    # )
-
-    # TODO: Cleanse data
-    return deletion_result
+    LOGGER.info('Items deleted: %s', deletion_result)
