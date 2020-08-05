@@ -7,6 +7,8 @@ Parameters:
     Default: empty-content-cleanser-function
   StreamTableName:
     Type: String
+  StreamTableIsSealedStartTimeIndex:
+    Type: String
   Environment:
     Type: String
     Default: dev
@@ -23,6 +25,7 @@ Resources:
       Environment:
         Variables:
           STREAM_TABLE_NAME: !Ref StreamTableName
+          STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME: !Ref StreamTableIsSealedStartTimeIndex
       MemorySize: 128
       Policies:
         - Version: "2012-10-17"
