@@ -26,16 +26,33 @@ def lambda_handler(event, context):
     LOGGER.debug(
         'Content cleansing triggered with event %s', event)
 
-    steram_table = DYNAMODB_RESOURCE.Table(STREAM_TABLE_NAME)
+    deletion_result = []
+    stream_table = DYNAMODB_RESOURCE.Table(STREAM_TABLE_NAME)
     start_time_old_limit_iso = (datetime.utcnow() - timedelta(seconds=TIME_TO_DELETE)).isoformat()
 
-    query_res = steram_table.query(
-        IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
-        KeyConditionExpression=Key(STREAM_TABLE_IS_SEALED_FIELD).eq(0) & Key(
-            STREAM_TABLE_START_TIME_FIELD).lt(start_time_old_limit_iso),
-        Select='ALL_ATTRIBUTES',
-        ScanIndexForward=True
-    )
+    # batch_writer to delete multiple items
+    scan_result = stream_table.scan()
+    with stream_table.batch_writer() as batch:
+        for item in scan_result.get('Items'):
+            if (
+                    item.get(STREAM_TABLE_IS_SEALED_FIELD, 0) == 0
+                    and item.get(STREAM_TABLE_START_TIME_FIELD) < start_time_old_limit_iso
+            ):
+                deletion_result.append(item['id'])
+                # batch.delete_item(
+                #     Key={
+                #         'id': item['id']
+                #     }
+                # )
+
+    # # Query
+    # query_res = stream_table.query(
+    #     IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
+    #     KeyConditionExpression=Key(STREAM_TABLE_IS_SEALED_FIELD).eq(0) & Key(
+    #         STREAM_TABLE_START_TIME_FIELD).lt(start_time_old_limit_iso),
+    #     Select='ALL_ATTRIBUTES',
+    #     ScanIndexForward=True
+    # )
 
     # TODO: Cleanse data
-    return query_res.get('Items')
+    return deletion_result
