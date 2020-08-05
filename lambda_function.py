@@ -17,6 +17,7 @@ STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME = os.environ[
     'STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME']
 
 # CONSTANTS
+STREAM_TABLE_BODY_FIELD = 'body'
 STREAM_TABLE_IS_SEALED_FIELD = 'isSealed'
 STREAM_TABLE_START_TIME_FIELD = 'startTime'
 TIME_TO_DELETE = 3 * 86400 # 3 days in seconds
@@ -35,7 +36,8 @@ def lambda_handler(event, context):
     with stream_table.batch_writer() as batch:
         for item in scan_result.get('Items'):
             if (
-                    item.get(STREAM_TABLE_IS_SEALED_FIELD, 0) == 0
+                    not item.get(STREAM_TABLE_BODY_FIELD)
+                    and item.get(STREAM_TABLE_IS_SEALED_FIELD, 0) == 0
                     and item.get(STREAM_TABLE_START_TIME_FIELD) < start_time_old_limit_iso
             ):
                 deletion_result.append(item['id'])
