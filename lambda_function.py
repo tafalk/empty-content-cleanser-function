@@ -1,21 +1,40 @@
-"""Resource Searcher"""
+"""Eats up empty content. Relentless."""
 import os
 import logging
+from datetime import datetime, timedelta
 import boto3
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Key #, Attr
 
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
+# DynamoDB connection
+DYNAMODB_CLIENT = boto3.client('dynamodb')
+
+# Env
+STREAM_TABLE_NAME = os.environ['STREAM_TABLE_NAME']
+STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME = os.environ[
+    'STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME']
+
+# CONSTANTS
+STREAM_TABLE_START_TIME_FIELD_NAME = 'startTime'
+TIME_TO_DELETE = 3 * 86400 # 3 days in seconds
 
 def lambda_handler(event, context):
     """"Default Handler"""
     LOGGER.debug(
         'Content cleansing triggered with event %s', event)
 
-    # DynamoDB connection and tables
-    dynamodb = boto3.resource('dynamodb')
-    stream_table = dynamodb.Table(os.environ['STREAM_TABLE_NAME'])
+    start_time_old_limit_iso = (datetime.utcnow() - timedelta(seconds=TIME_TO_DELETE)).isoformat()
+
+    query_res = DYNAMODB_CLIENT.query(
+        TableName=STREAM_TABLE_NAME,
+        IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
+        KeyConditionExpression=Key(
+            STREAM_TABLE_START_TIME_FIELD_NAME).lt(start_time_old_limit_iso),
+        Select='ALL_ATTRIBUTES',
+        ScanIndexForward=True
+    )
 
     # TODO: Cleanse data
-    return
+    return query_res.get('Items')
