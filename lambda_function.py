@@ -17,7 +17,8 @@ STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME = os.environ[
     'STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME']
 
 # CONSTANTS
-STREAM_TABLE_START_TIME_FIELD_NAME = 'startTime'
+STREAM_TABLE_IS_SEALED_FIELD = 'isSealed'
+STREAM_TABLE_START_TIME_FIELD = 'startTime'
 TIME_TO_DELETE = 3 * 86400 # 3 days in seconds
 
 def lambda_handler(event, context):
@@ -30,8 +31,8 @@ def lambda_handler(event, context):
 
     query_res = steram_table.query(
         IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
-        KeyConditionExpression=Key(
-            STREAM_TABLE_START_TIME_FIELD_NAME).lt(start_time_old_limit_iso),
+        KeyConditionExpression=Key(STREAM_TABLE_IS_SEALED_FIELD).eq(0) & Key(
+            STREAM_TABLE_START_TIME_FIELD).lt(start_time_old_limit_iso),
         Select='ALL_ATTRIBUTES',
         ScanIndexForward=True
     )
