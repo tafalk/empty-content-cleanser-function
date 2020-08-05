@@ -9,7 +9,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 # DynamoDB connection
-DYNAMODB_CLIENT = boto3.client('dynamodb')
+DYNAMODB_RESOURCE = boto3.resource('dynamodb')
 
 # Env
 STREAM_TABLE_NAME = os.environ['STREAM_TABLE_NAME']
@@ -25,10 +25,10 @@ def lambda_handler(event, context):
     LOGGER.debug(
         'Content cleansing triggered with event %s', event)
 
+    steram_table = DYNAMODB_RESOURCE.Table(STREAM_TABLE_NAME)
     start_time_old_limit_iso = (datetime.utcnow() - timedelta(seconds=TIME_TO_DELETE)).isoformat()
 
-    query_res = DYNAMODB_CLIENT.query(
-        TableName=STREAM_TABLE_NAME,
+    query_res = steram_table.query(
         IndexName=STREAM_TABLE_IS_SEALED_START_TIME_INDEX_NAME,
         KeyConditionExpression=Key(
             STREAM_TABLE_START_TIME_FIELD_NAME).lt(start_time_old_limit_iso),

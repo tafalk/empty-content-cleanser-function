@@ -1,0 +1,3 @@
+[MASTER]
+# https://stackoverflow.com/questions/58809862/boto3-instance-of-has-no-bucket
+disable=E1101
